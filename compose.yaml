@@ -1,0 +1,53 @@
+# The full stack on one machine, with the API and controller as separate
+# processes talking through Postgres, Redis and NATS. Jobs run as subprocesses
+# inside the controller container on made-up GPU nodes.
+#
+#   docker compose up --build
+#   docker compose exec api forge admin bootstrap     # prints an admin key
+x-forge: &forge
+  build: .
+  environment: &env
+    FORGE_DATABASE_URL: postgresql+psycopg://forge:forge@postgres/forge
+    FORGE_REDIS_URL: redis://redis:6379/0
+    FORGE_NATS_URL: nats://nats:4222
+    FORGE_SECRET: ${FORGE_SECRET:-dev-secret-change-me}
+    FORGE_API_URL: http://api:8080
+    FORGE_NODES: node-0=8,node-1=8,node-2=8,node-3=8
+    FORGE_MIN_RUNTIME: "30"
+  volumes:
+    - data:/data
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: forge
+      POSTGRES_PASSWORD: forge
+      POSTGRES_DB: forge
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forge"]
+      interval: 2s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+  nats:
+    image: nats:2.10-alpine
+  api:
+    <<: *forge
+    ports: ["8080:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
+      nats: { condition: service_started }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 2s
+      retries: 30
+  controller:
+    <<: *forge
+    command: ["forge", "controller"]
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  data:

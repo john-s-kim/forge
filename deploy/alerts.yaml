@@ -1,0 +1,39 @@
+# Prometheus alerting rules for the metrics exported by the controller and API.
+groups:
+  - name: forge
+    rules:
+      - alert: ForgeStalledRun
+        expr: forge_stalled_runs > 0
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $value }} running job(s) have sent no heartbeat for 5 minutes"
+      - alert: ForgeIdleAllocation
+        expr: forge_idle_allocated_gpus > 0
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $value }} GPU(s) are held by jobs that have logged no step for 10 minutes"
+      - alert: ForgeDivergedRun
+        expr: increase(forge_diverged_points_total[5m]) > 0
+        labels: { severity: info }
+        annotations:
+          summary: "A {{ $labels.team }} job logged a NaN or infinite metric"
+      - alert: ForgeQueueWaitHigh
+        expr: histogram_quantile(0.95, sum by (le, priority) (rate(forge_queue_wait_seconds_bucket{priority="high"}[30m]))) > 900
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "High-priority jobs are waiting more than 15 minutes at p95"
+      - alert: ForgeSchedulerSlow
+        expr: histogram_quantile(0.99, sum by (le) (rate(forge_scheduling_cycle_seconds_bucket[5m]))) > 1
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Scheduling cycles are taking more than a second at p99"
+      - alert: ForgeControllerDown
+        expr: absent(forge_gpus_total)
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "The Forge controller is not reporting; nothing is being scheduled"

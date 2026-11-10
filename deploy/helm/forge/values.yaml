@@ -1,0 +1,24 @@
+image:
+  repository: forge
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Postgres, Redis and NATS are not installed by this chart; point at existing ones.
+databaseUrl: postgresql+psycopg://forge:forge@postgres/forge
+redisUrl: redis://redis:6379/0
+natsUrl: nats://nats:4222
+
+# Name of an existing Secret with key FORGE_SECRET. If empty, a Secret is
+# created from `secret`.
+existingSecret: ""
+secret: ""
+
+# One namespace is created per team; training pods run there.
+teams: []
+
+gpuResource: nvidia.com/gpu
+minRuntimeSeconds: 1800
+preemptionGraceSeconds: 60
+api:
+  replicas: 1
+  port: 8080

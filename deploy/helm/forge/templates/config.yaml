@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}
+data:
+  FORGE_DATABASE_URL: {{ .Values.databaseUrl | quote }}
+  FORGE_REDIS_URL: {{ .Values.redisUrl | quote }}
+  FORGE_NATS_URL: {{ .Values.natsUrl | quote }}
+  FORGE_BACKEND: kube
+  FORGE_GPU_RESOURCE: {{ .Values.gpuResource | quote }}
+  FORGE_MIN_RUNTIME: {{ .Values.minRuntimeSeconds | quote }}
+  FORGE_PREEMPTION_GRACE: {{ .Values.preemptionGraceSeconds | quote }}
+  FORGE_API_URL: "http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc:{{ .Values.api.port }}"
