@@ -219,10 +219,11 @@ a missing controller.
 | SDK and CLI | Exercised by the end-to-end tests and the demo |
 | Dashboard | Builds under strict TypeScript; checked by hand against the demo |
 | Triage rules and eval harness | Tested |
-| Postgres, Redis and NATS adapters | Run by hand in the Compose stack (jobs, live logs over NATS, metrics in Redis, a preemption); no automated test yet |
+| Postgres, Redis and NATS adapters | Covered by the Compose smoke test in CI (submit a job and see it succeed); live logs and preemption on that stack were checked by hand |
 | Dockerfile and `compose.yaml` | Image builds and the stack runs the demo with the API and controller as separate processes |
-| Kubernetes backend and Helm chart | Written; **not yet run against a cluster** |
-| CI workflow | Written; **not yet run** |
+| Kubernetes backend | Written; **not yet run against a cluster** |
+| Helm chart | Lints and renders in CI; **not yet installed on a cluster** |
+| CI workflow | Runs on every push: lint, types, tests, benchmark smoke run, dashboard build, image build, a Compose smoke test and Helm lint |
 
 Known gaps: checkpoints are stored on the API's disk rather than in an object
 store; the controller is a single instance with no leader election; the rate
