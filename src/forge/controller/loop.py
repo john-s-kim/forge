@@ -254,7 +254,15 @@ class Controller:
                     ).observe(now - job.submitted_at)
                 job.wait_reason, job.queue_position = None, None
                 self._transition(s, job, db.STARTING, now=now)
-                self.backend.start(self._launch(job, a))
+                try:
+                    self.backend.start(self._launch(job, a))
+                except Exception as e:
+                    # A job the backend rejects must not stall the whole cycle.
+                    log.exception("could not start job %s", job.id)
+                    self.backend.forget(a.id)
+                    a.ended_at = now
+                    a.exit_reason = f"could not start: {type(e).__name__}"
+                    self._transition(s, job, db.FAILED, a.exit_reason, now=now)
             else:
                 reason = d.wait_reasons.get(cj.id)
                 job.wait_reason = str(reason) if reason else None

@@ -46,6 +46,16 @@ docker compose up --build -d --wait
 docker compose exec api forge admin bootstrap --quota 16     # prints an admin key
 ```
 
+To run it on Kubernetes locally (needs Docker, kind, kubectl and helm): this
+creates a kind cluster whose two workers each advertise eight GPUs that do not
+exist, installs the Helm chart, and runs jobs as real pods.
+
+```bash
+deploy/kind/up.sh
+deploy/kind/smoke.sh        # placement, preemption, resume from checkpoint, cancel
+kind delete cluster --name forge
+```
+
 ## How it fits together
 
 ```
@@ -69,7 +79,7 @@ training process ──> API     metrics, heartbeats, checkpoints (job-scoped to
 | `src/forge/sdk.py` | What a training script imports: metrics, checkpoint, resume. |
 | `src/forge/triage/` | Failure triage: rule-based diagnosis and an eval harness. |
 | `web/` | React and TypeScript dashboard. |
-| `deploy/` | Helm chart and alert rules. |
+| `deploy/` | Helm chart, alert rules, and a local kind cluster setup with a smoke test. |
 
 One design rule carries most of the weight: **the scheduler core does no I/O**.
 `schedule(cluster, now, policy)` takes a snapshot and returns placements and
@@ -221,9 +231,8 @@ a missing controller.
 | Triage rules and eval harness | Tested |
 | Postgres, Redis and NATS adapters | Covered by the Compose smoke test in CI (submit a job and see it succeed); live logs and preemption on that stack were checked by hand |
 | Dockerfile and `compose.yaml` | Image builds and the stack runs the demo with the API and controller as separate processes |
-| Kubernetes backend | Written; **not yet run against a cluster** |
-| Helm chart | Lints and renders in CI; **not yet installed on a cluster** |
-| CI workflow | Runs on every push: lint, types, tests, benchmark smoke run, dashboard build, image build, a Compose smoke test and Helm lint |
+| Kubernetes backend and Helm chart | Tested on a kind cluster in CI: jobs run as pods on the nodes the scheduler picked, a borrowed job is preempted and resumes from its checkpoint, cancel removes the pods. A running job surviving a controller restart was checked by hand. Not run on real GPUs or a multi-tenant cluster |
+| CI workflow | Runs on every push: lint, types, tests, benchmark smoke run, dashboard build, image build, a Compose smoke test, Helm lint and the kind cluster test |
 
 Known gaps: checkpoints are stored on the API's disk rather than in an object
 store; the controller is a single instance with no leader election; the rate

@@ -14,7 +14,7 @@ spec:
         prometheus.io/port: {{ .Values.api.port | quote }}
     spec:
       automountServiceAccountToken: false
-      securityContext: { runAsNonRoot: true, runAsUser: 1000 }
+      securityContext: { runAsNonRoot: true, runAsUser: 1000, fsGroup: 1000 }
       containers:
         - name: api
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

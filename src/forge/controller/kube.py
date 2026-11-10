@@ -60,7 +60,11 @@ class KubeBackend:
                     restart_policy="Never",
                     automount_service_account_token=False,
                     termination_grace_period_seconds=int(launch.grace_seconds),
-                    security_context=c.V1PodSecurityContext(run_as_non_root=True, run_as_user=1000),
+                    security_context=c.V1PodSecurityContext(
+                        run_as_non_root=True,
+                        run_as_user=1000,
+                        seccomp_profile=c.V1SeccompProfile(type="RuntimeDefault"),
+                    ),
                     # GPU nodes are usually tainted; the scheduler has already chosen the node.
                     tolerations=[c.V1Toleration(operator="Exists")],
                     containers=[

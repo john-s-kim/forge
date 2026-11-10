@@ -258,6 +258,8 @@ It cannot submit or cancel jobs; a person approves a patch before anything is re
 ## 11. Running without GPUs
 
 - A local backend that runs jobs as subprocesses on made-up GPU nodes.
+- A `kind` cluster whose worker nodes advertise a fake `nvidia.com/gpu`
+  capacity, for running jobs as real pods.
 - One real workload: a small ResNet on CIFAR-10, to prove SDK logging,
   checkpoint on SIGTERM, and resume.
 - Trace replay runs in the simulator with a virtual clock, no cluster needed.
@@ -297,7 +299,7 @@ forge/
   sdk/            Python SDK and CLI
   triage/         failure diagnosis and eval harness
   web/            React dashboard
-  deploy/         Helm chart, alert rules
+  deploy/         Helm chart, alert rules, kind setup
   bench/          trace loaders, result notebooks
   examples/       CIFAR job, seeded failure jobs
 ```
